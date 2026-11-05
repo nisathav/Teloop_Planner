@@ -128,9 +128,11 @@ export function validateBooking(draft: DraftBooking, ctx: ValidationContext): Ru
     }
   }
 
-  // Per-task cap
+  // Per-task cap. The booking's own minutes: actual when it is completed and logged, else planned.
+  const ownMinutes = (seg: { plannedMinutes: number; actualMinutes?: number | null }) =>
+    b.status === "completed" && seg.actualMinutes != null ? seg.actualMinutes : seg.plannedMinutes;
   const draftByTask = new Map<string, number>();
-  for (const seg of b.segments) draftByTask.set(seg.taskId, (draftByTask.get(seg.taskId) ?? 0) + seg.plannedMinutes);
+  for (const seg of b.segments) draftByTask.set(seg.taskId, (draftByTask.get(seg.taskId) ?? 0) + ownMinutes(seg));
   for (const [taskId, mins] of draftByTask) {
     const task = ctx.tasks.find((t) => t.id === taskId);
     if (!task) continue;
@@ -148,7 +150,7 @@ export function validateBooking(draft: DraftBooking, ctx: ValidationContext): Ru
   // Daily limits (recorded/planned hours on the booking's day)
   const dayTotal =
     opBookings.filter((o) => dayKey(o.start) === day).reduce((sum, o) => sum + committedMinutes(o), 0) +
-    b.segments.reduce((sum, x) => sum + x.plannedMinutes, 0);
+    b.segments.reduce((sum, x) => sum + ownMinutes(x), 0);
   if (dayTotal > s.dailyHardHoursPerOperator * 60) {
     results.push({ level: "block", rule: "operator-daily-hard", message: `${opName} would record ${h(dayTotal)} on ${day}, above the hard daily limit of ${s.dailyHardHoursPerOperator} h.` });
   } else if (dayTotal > s.dailySoftHoursPerOperator * 60) {

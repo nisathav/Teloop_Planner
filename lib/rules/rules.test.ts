@@ -280,6 +280,13 @@ describe("operator rules", () => {
     );
   });
 
+  it("2. a logged booking counts its actual minutes, not planned, against the cap", () => {
+    const done = booking({ id: "done1", deviceId: "d2", start: t("08:00", "2026-11-08"), end: t("12:15", "2026-11-08"), status: "completed", segments: [{ taskId: "cook", plannedMinutes: 240, actualMinutes: 200 }] });
+    const other = booking({ id: "p2", deviceId: "d2", start: t("08:00", "2026-11-09"), end: t("09:40", "2026-11-09"), segments: [{ taskId: "cook", plannedMinutes: 100 }] });
+    // 200 actual + 100 planned = 300 = cap -> re-validating the logged booking must not block
+    expect(rules(validateBooking(done, ctx({ bookings: [done, other] })))).not.toContain("block:operator-task-cap");
+  });
+
   it("2. a task-level cap override is used", () => {
     const c = ctx({ bookings: [booking({ deviceId: "d2", start: t("08:00", "2026-11-08"), end: t("15:30", "2026-11-08"), segments: [{ taskId: "clean", plannedMinutes: 420 }] })] });
     expect(rules(validateBooking(draft({ start: t("08:00"), end: t("09:00"), segments: [{ taskId: "clean", plannedMinutes: 60 }] }), c))).not.toContain("block:operator-task-cap");

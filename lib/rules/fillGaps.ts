@@ -13,6 +13,9 @@ export interface OpenSlot {
   needsPowerBank: boolean;
 }
 
+/** Smallest segment the helper will suggest. */
+const MIN_PIECE = 30;
+
 const DEVICE_RULES = new Set(["device-window", "device-overlap", "device-manual-event", "device-daily-max", "device-status"]);
 
 /**
@@ -136,19 +139,23 @@ export function rankOperatorsForSlot(slot: OpenSlot, ctx: ValidationContext): Op
       .sort((a, b) => Number(b.supports) - Number(a.supports) || b.behind - a.behind || b.capLeft - a.capLeft);
     if (options.length === 0) continue;
 
-    // Fill each slot segment with the best task that still has cap left.
+    // Fill each slot segment with one task: prefer a task whose remaining cap covers the whole segment,
+    // otherwise the best task with a useful remainder (never below MIN_PIECE minutes).
     const capLeft = new Map(options.map((o) => [o.t.id, o.capLeft]));
     const assigned: CandidateTask[] = [];
     let budget = Math.min(slotRec, dailyLeft);
     for (const segMin of slot.segments) {
-      if (budget <= 0) break;
-      const pick = options.find((o) => (capLeft.get(o.t.id) ?? 0) > 0);
+      if (budget < MIN_PIECE) break;
+      const want = Math.min(segMin, budget);
+      const pick =
+        options.find((o) => (capLeft.get(o.t.id) ?? 0) >= want) ?? options.find((o) => (capLeft.get(o.t.id) ?? 0) >= MIN_PIECE);
       if (!pick) break;
-      const mins = Math.min(segMin, capLeft.get(pick.t.id)!, budget);
+      const mins = Math.min(want, capLeft.get(pick.t.id)!);
       capLeft.set(pick.t.id, capLeft.get(pick.t.id)! - mins);
       budget -= mins;
       assigned.push({ taskId: pick.t.id, taskName: pick.t.name, minutes: mins });
     }
+    if (assigned.length === 0) continue;
     const assignedMin = assigned.reduce((a, x) => a + x.minutes, 0);
     const behindScore = assigned.reduce((a, x) => a + (taskBehind.get(x.taskId) ?? 0) * x.minutes, 0) / Math.max(1, assignedMin);
     const capScore = Math.min(1, assignedMin / Math.max(1, slotRec));

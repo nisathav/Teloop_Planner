@@ -51,7 +51,7 @@ export function deviceRecordingMinutes(b: BookingLite): number {
   return b.segments.reduce((sum, s) => sum + (isCompleted(b) && s.actualMinutes != null ? s.actualMinutes : s.plannedMinutes), 0);
 }
 
-export function taskCapMinutes(task: Pick<TaskLite, "perPersonCapHours">, settings: Settings): number {
+export function taskCapMinutes(task: Pick<TaskLite, "perPersonCapHours">, settings: Pick<Settings, "maxHoursPerOperatorPerTask">): number {
   const h = task.perPersonCapHours ?? settings.maxHoursPerOperatorPerTask;
   return Math.round(h * 60);
 }
