@@ -22,6 +22,10 @@ The first `npm run dev` creates `.env` from `.env.example`, creates the SQLite d
 
 The seed runs only on an empty database, so it never overwrites your data.
 
+### Try it in GitHub Codespaces (no install)
+
+On the repository page: **Code → Codespaces → Create codespace on `claude/gifted-fermat-99wxs8`** (or whichever branch holds this code). The codespace installs dependencies, loads the demo data and starts the app; a preview opens on port 3000 (also under the **Ports** tab). Sign in with `admin`. The codespace's database is throw-away test data.
+
 ### Demo data (optional)
 
 To try the app with realistic data (12 sample operators, a project that started 3 days ago, about 80 bookings with logged sessions):

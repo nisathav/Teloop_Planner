@@ -1,0 +1,14 @@
+{
+  "name": "Fleet Planner",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Fleet Planner", "onAutoForward": "openPreview" }
+  },
+  "postCreateCommand": "npm install && node scripts/ensure-env.mjs && npm run db:reset:demo",
+  "postAttachCommand": "npm run dev",
+  "customizations": {
+    "codespaces": { "openFiles": ["README.md"] },
+    "vscode": { "extensions": ["Prisma.prisma", "bradlc.vscode-tailwindcss"] }
+  }
+}
