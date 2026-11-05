@@ -3,16 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "setup": "node scripts/ensure-env.mjs && prisma db push --skip-generate && prisma db seed",
+    "predev": "npm run setup",
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
+    "db:seed:demo": "SEED_DEMO=1 prisma db seed",
     "db:reset": "prisma db push --force-reset && prisma db seed",
-    "postinstall": "prisma generate && node scripts/ensure-env.mjs && prisma db push --skip-generate && prisma db seed"
+    "db:reset:demo": "prisma db push --force-reset && SEED_DEMO=1 prisma db seed",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -26,6 +30,7 @@
     "react": "19.1.10",
     "react-dom": "19.1.10",
     "recharts": "2.15.4",
+    "server-only": "^0.0.1",
     "tailwind-merge": "2.6.0"
   },
   "devDependencies": {
