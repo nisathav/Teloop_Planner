@@ -1,0 +1,184 @@
+// Fleet Planner schema.
+// Kept Postgres-compatible: no SQLite-only types, statuses are plain strings.
+// To move to Postgres, change provider to "postgresql" and update DATABASE_URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  client      String   @default("")
+  targetHours Float    @default(1000)
+  startDate   DateTime
+  deadline    DateTime
+  status      String   @default("active") // active | archived
+  createdAt   DateTime @default(now())
+
+  // ---- Settings (all editable on the Settings page) ----
+  maxHoursPerOperatorPerTask Float  @default(5)
+  dailySoftHoursPerOperator  Float  @default(4)
+  dailyHardHoursPerOperator  Float  @default(6)
+  maxContinuousMinutes       Int    @default(120)
+  minBreakMinutes            Int    @default(15)
+  deviceRuntimeHours         Float  @default(10)
+  powerBanksAvailable        Int    @default(10)
+  rechargeMinutes            Int    @default(60)
+  windowStartMinutes         Int    @default(360) // 06:00
+  windowEndMinutes           Int    @default(1320) // 22:00
+  deviceMaxActiveHours       Float  @default(16)
+  offloadMinutes             Int    @default(60)
+  offloadTrigger             String @default("end_of_day") // end_of_day | after_hours | both
+  offloadAfterHours          Float  @default(8)
+  handoffMinutes             Int    @default(45)
+  payRatePerHour             Float  @default(1000)
+  defaultSlotRecordingHours  Float  @default(4)
+
+  tasks    Task[]
+  bookings Booking[]
+  payments Payment[]
+  overrides OverrideLog[]
+}
+
+model Task {
+  id                String   @id @default(cuid())
+  projectId         String
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name              String
+  description       String   @default("")
+  targetHours       Float    @default(0)
+  perPersonCapHours Float?
+  requirements      String   @default("")
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  segments Segment[]
+}
+
+model Device {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  status    String   @default("available") // available | booked | in-field | offloading | charging | maintenance | retired
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+
+  bookings   Booking[]
+  events     DeviceEvent[]
+  powerBanks PowerBank[]
+}
+
+model PowerBank {
+  id       String  @id @default(cuid())
+  code     String  @unique
+  status   String  @default("charged") // charged | in-use | charging
+  deviceId String?
+  device   Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  bookings BookingPowerBank[]
+}
+
+model Operator {
+  id             String   @id @default(cuid())
+  name           String
+  phone          String   @default("")
+  area           String   @default("")
+  address        String   @default("")
+  householdNotes String   @default("")
+  supportedTasks String   @default("") // newline/comma separated task names (tasks differ per project)
+  status         String   @default("active") // prospect | active | inactive
+  joinedAt       DateTime @default(now())
+
+  bookings Booking[]
+  payments Payment[]
+}
+
+model Booking {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deviceId   String
+  device     Device    @relation(fields: [deviceId], references: [id])
+  operatorId String
+  operator   Operator  @relation(fields: [operatorId], references: [id])
+  start      DateTime
+  end        DateTime
+  status     String    @default("planned") // planned | confirmed | in-progress | completed | cancelled | no-show
+  notes      String    @default("")
+  loggedAt   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  segments   Segment[]
+  powerBanks BookingPowerBank[]
+
+  @@index([deviceId, start])
+  @@index([operatorId, start])
+}
+
+model BookingPowerBank {
+  bookingId   String
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  powerBankId String
+  powerBank   PowerBank @relation(fields: [powerBankId], references: [id], onDelete: Cascade)
+
+  @@id([bookingId, powerBankId])
+}
+
+model Segment {
+  id             String  @id @default(cuid())
+  bookingId      String
+  booking        Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  taskId         String
+  task           Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  plannedMinutes Int
+  actualMinutes  Int?
+  order          Int     @default(0)
+}
+
+model DeviceEvent {
+  id        String   @id @default(cuid())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  type      String // handoff | offload | charge | maintenance
+  start     DateTime
+  end       DateTime
+  note      String   @default("")
+  auto      Boolean  @default(true) // generated from bookings; regenerated on every change
+  done      Boolean  @default(false)
+  bookingId String? // booking that caused the buffer (auto events)
+  createdAt DateTime @default(now())
+
+  @@index([deviceId, start])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  operatorId  String
+  operator    Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  periodStart DateTime
+  periodEnd   DateTime
+  hours       Float
+  amount      Float
+  paidAt      DateTime @default(now())
+  reference   String   @default("")
+}
+
+model OverrideLog {
+  id         String   @id @default(cuid())
+  projectId  String?
+  project    Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  rule       String
+  message    String   @default("")
+  entityType String
+  entityId   String
+  reason     String
+  createdAt  DateTime @default(now())
+}
