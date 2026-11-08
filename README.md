@@ -24,7 +24,18 @@ The seed runs only on an empty database, so it never overwrites your data.
 
 ### Try it in GitHub Codespaces (no install)
 
-On the repository page: **Code → Codespaces → Create codespace on `claude/gifted-fermat-99wxs8`** (or whichever branch holds this code). The codespace installs dependencies, loads the demo data and starts the app; a preview opens on port 3000 (also under the **Ports** tab). Sign in with `admin`. The codespace's database is throw-away test data.
+1. On the repository page: **Code → Codespaces → Create codespace on `claude/gifted-fermat-99wxs8`** (or whichever branch holds this code).
+2. Wait for the setup to finish (about 3–5 minutes the first time: install, demo data, production build). The terminal shows `Ready` when the app is up.
+3. The app opens in a new browser tab. If it doesn't, open the **Ports** tab, find port **3000 (Fleet Planner)** and click the globe icon.
+4. Sign in with `admin`.
+
+If it doesn't open:
+- **Pop-up blocked:** allow pop-ups for github.dev, or use the Ports tab as in step 3.
+- **"502" or a blank page:** the app is still starting. Wait for `Ready` in the terminal and refresh.
+- **Nothing running in the terminal:** open a terminal and run `npm run start:codespace`.
+- **Setup failed:** open the Command Palette and run *Codespaces: View Creation Log*, or run `npm install && npm run setup:demo && npm run build` yourself.
+
+The codespace's database is throwaway test data.
 
 ### Demo data (optional)
 

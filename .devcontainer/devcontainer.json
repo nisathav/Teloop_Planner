@@ -3,10 +3,11 @@
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
   "forwardPorts": [3000],
   "portsAttributes": {
-    "3000": { "label": "Fleet Planner", "onAutoForward": "openPreview" }
+    "3000": { "label": "Fleet Planner", "onAutoForward": "openBrowser" }
   },
-  "postCreateCommand": "npm install && node scripts/ensure-env.mjs && npm run db:reset:demo",
-  "postAttachCommand": "npm run dev",
+  "waitFor": "postCreateCommand",
+  "postCreateCommand": "npm install && npm run setup:demo && npm run build",
+  "postAttachCommand": "npm run start:codespace",
   "customizations": {
     "codespaces": { "openFiles": ["README.md"] },
     "vscode": { "extensions": ["Prisma.prisma", "bradlc.vscode-tailwindcss"] }

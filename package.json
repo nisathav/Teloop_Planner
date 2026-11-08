@@ -16,7 +16,9 @@
     "db:seed:demo": "SEED_DEMO=1 prisma db seed",
     "db:reset": "prisma db push --force-reset && prisma db seed",
     "db:reset:demo": "prisma db push --force-reset && SEED_DEMO=1 prisma db seed",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "setup:demo": "node scripts/ensure-env.mjs && prisma db push --skip-generate && SEED_DEMO=1 prisma db seed",
+    "start:codespace": "node scripts/ensure-env.mjs && prisma db push --skip-generate && prisma db seed && (test -f .next/BUILD_ID || next build) && next start -H 0.0.0.0 -p 3000"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

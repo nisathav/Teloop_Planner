@@ -5,5 +5,6 @@ import { enterShare } from "@/app/actions/auth";
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token") ?? "";
   const ok = await enterShare(token);
-  return NextResponse.redirect(new URL(ok ? "/" : "/login", req.url));
+  // Relative redirect: behind a proxy (Codespaces, tunnels) req.url points at localhost.
+  return new NextResponse(null, { status: 307, headers: { Location: ok ? "/" : "/login" } });
 }
